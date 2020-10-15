@@ -300,7 +300,9 @@ target_include_directories(getSupportedAPITest PUBLIC ${ONNX_INCLUDE_DIRS} ${CUD
 
 target_link_libraries(getSupportedAPITest PUBLIC ${PROTOBUF_LIB} nvonnxparser_static ${CUDA_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
 
-
+include_directories(
+	/usr/local/cuda-10.1/targets/x86_64-linux/include/
+	)
 # --------------------------------
 # Installation
 # --------------------------------

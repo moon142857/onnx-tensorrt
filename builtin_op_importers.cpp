@@ -826,6 +826,14 @@ DEFINE_BUILTIN_OP_IMPORTER(ConvTranspose) {
     kernel_weights.shape.nbDims = 4;
     kernel_weights.shape.d[3] = 1;
   }
+  
+  // printf("ConvTranspose dims.nbDims %d, inputs.size() %d type[%d %d] dim[%d %d] shape[%d %d %d %d]\n",
+  //   dims.nbDims, (int)inputs.size(), inputs.at(0).is_tensor(), inputs.at(1).is_weights(),
+  //   inputs.at(0).shape().nbDims,  inputs.at(1).shape().nbDims, 
+  //   inputs.at(1).shape().d[0],
+  //   inputs.at(1).shape().d[1],
+  //   inputs.at(1).shape().d[2],
+  //   inputs.at(1).shape().d[3]);
   const int nbSpatialDims = dims.nbDims - 1;
   // TensorRT supports 2D and 3D deconvolutions
   ASSERT((nbSpatialDims == 2 && kernel_weights.shape.nbDims == 4) ||
@@ -849,6 +857,25 @@ DEFINE_BUILTIN_OP_IMPORTER(ConvTranspose) {
     ASSERT(attrs.get("auto_pad", std::string("VALID")) == "VALID" || attrs.get("auto_pad", std::string("NOTSET")) == "NOTSET" ,
            ErrorCode::kINVALID_NODE);
   }
+  
+    // for( auto const& attr : node.attribute() ) {
+    //   std::cout << "ConvTranspose:" << attr.name() << " :" << attrs.get(attr.name()) << std::endl;
+    // }
+  // std::cout << "ConvTranspose: bias_weights count :"  << bias_weights.count << "type: "  << bias_weights.type <<std::endl;
+  // std::cout << "ConvTranspose: dilations :"  << attrs.get<int>("dilations") << std::endl;
+  // std::cout << "ConvTranspose: group :"  << attrs.get<int>("group") << std::endl;
+  // std::vector<int> kernel_shape_v = attrs.get<std::vector<int>>("kernel_shape");
+  // for(int i=0; i < (int)kernel_shape_v.size(); ++i)
+  // {
+  //   std::cout << "ConvTranspose: kernel_shape :"  << kernel_shape_v[i] << std::endl;
+  // }
+    
+  // std::cout << "ConvTranspose: output_padding :"  << attrs.get<nvinfer1::Dims>("output_padding") << std::endl;
+  // for(int i=0; i<(int)attrs.get<std::vector<int>>("pads").size(); ++i)
+  //   std::cout << "ConvTranspose: pads :"  << attrs.get<std::vector<int>>("pads")[i] << std::endl;
+  // for(int i=0; i<(int)attrs.get<std::vector<int>>("strides").size(); ++i)
+  //   std::cout << "ConvTranspose: strides :"  << attrs.get<std::vector<int>>("strides")[i] << std::endl;
+  
   nvinfer1::Dims kernel_size;
   kernel_size.nbDims = nbSpatialDims;
   for(int i = 1; i <= nbSpatialDims; ++i){
@@ -866,6 +893,10 @@ DEFINE_BUILTIN_OP_IMPORTER(ConvTranspose) {
     ASSERT(kernel_size.d[nbSpatialDims - i] == kernel_weights.shape.d[kernel_weights.shape.nbDims - i], ErrorCode::kUNSUPPORTED_NODE);
     ASSERT(dilations.d[nbSpatialDims - i] == 1, ErrorCode::kUNSUPPORTED_GRAPH);
   }
+  // std::cout << "ConvTranspose2: strides :"  << strides << std::endl;
+  // std::cout << "ConvTranspose2: paddingMode :"  << (int)paddingMode << std::endl;
+  // std::cout << "ConvTranspose2: beg_padding :"  << beg_padding << std::endl;
+  // std::cout << "ConvTranspose2: end_padding :"  << end_padding << std::endl;
 
   int nchan = dims.d[0];
   int ngroup = attrs.get("group", 1);
@@ -883,11 +914,18 @@ DEFINE_BUILTIN_OP_IMPORTER(ConvTranspose) {
   }
   deconv_layer->setPaddingMode(paddingMode);
   deconv_layer->setPrePadding(beg_padding);
-  deconv_layer->setPostPadding(end_padding);
+  deconv_layer->setPostPadding(beg_padding);
   ASSERT(kernel_weights.shape.d[0] == nchan, ErrorCode::kINVALID_NODE);
   deconv_layer->setNbGroups(ngroup);
   tensor_ptr = layer->getOutput(0);
   dims = tensor_ptr->getDimensions();
+
+  // std::cout << "ConvTranspose1: strides :"  << strides << std::endl;
+  // std::cout << "ConvTranspose1: paddingMode :"  << (int)paddingMode << std::endl;
+  // std::cout << "ConvTranspose1: beg_padding :"  << beg_padding << std::endl;
+  // std::cout << "ConvTranspose1: end_padding :"  << end_padding << std::endl;
+  // std::cout << "ConvTranspose1: ngroup :"  << ngroup << std::endl;
+
   if( need_to_expand_dims ) {
     // Un-expand spatial dims back to 1D
     nvinfer1::Dims new_shape{2, {dims.d[0], dims.d[1]}};
